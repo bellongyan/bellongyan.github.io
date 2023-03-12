@@ -13,17 +13,17 @@
 <meta property="og:site_name" content="龙火火的个人博客">
 <meta property="og:description" content="数据的并发控制事务事务(TRANSACTION)是作为单个逻辑工作单元执行的一系列操作 &#x3D;&#x3D;要么全做，要么全不做&#x3D;&#x3D;  转帐过程就是一个事务。 它需要两条 UPDATE 语句来完成，这两条语句是一个整体，如果其中任一条出现错误，则整个转帐业务也应取消，两个帐户中的余额应恢复到原来的数据，从而确保转帐前和转帐后的余额不变，即都是 1001 元。  123456">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://img2023.cnblogs.com/blog/2770491/202302/2770491-20230224202644873-1037290822.png">
-<meta property="og:image" content="https://img2023.cnblogs.com/blog/2770491/202302/2770491-20230224202722726-1749880978.png">
-<meta property="og:image" content="https://img2023.cnblogs.com/blog/2770491/202302/2770491-20230224202745127-2014565866.png">
-<meta property="og:image" content="https://img2023.cnblogs.com/blog/2770491/202302/2770491-20230224202812795-1896531575.png">
-<meta property="og:image" content="https://img2023.cnblogs.com/blog/2770491/202302/2770491-20230224202831968-2110478365.png">
-<meta property="og:image" content="https://img2023.cnblogs.com/blog/2770491/202302/2770491-20230224202909283-1748931669.png">
+<meta property="og:image" content="https://i.postimg.cc/5yfGgNJm/2770491-20230224202644873-1037290822.png">
+<meta property="og:image" content="https://i.postimg.cc/50SKXdzQ/2770491-20230224202722726-1749880978.png">
+<meta property="og:image" content="https://i.postimg.cc/nhTv9FSJ/2770491-20230224202745127-2014565866.png">
+<meta property="og:image" content="https://i.postimg.cc/J4nYzFzt/2770491-20230224202812795-1896531575.png">
+<meta property="og:image" content="https://i.postimg.cc/GtSQDcmt/2770491-20230224202831968-2110478365.png">
+<meta property="og:image" content="https://i.postimg.cc/sx1Pst4r/2770491-20230224202909283-1748931669.png">
 <meta property="article:published_time" content="2023-03-12T16:19:44.000Z">
-<meta property="article:modified_time" content="2023-03-12T16:22:35.120Z">
+<meta property="article:modified_time" content="2023-03-12T16:30:13.526Z">
 <meta property="article:author" content="Long Yan">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img2023.cnblogs.com/blog/2770491/202302/2770491-20230224202644873-1037290822.png">
+<meta name="twitter:image" content="https://i.postimg.cc/5yfGgNJm/2770491-20230224202644873-1037290822.png">
   
     <link rel="alternate" href="/atom.xml" title="龙火火的个人博客" type="application/atom+xml">
   
@@ -129,8 +129,8 @@
 
 <h3 id="并发操作对数据的不一致性"><a href="#并发操作对数据的不一致性" class="headerlink" title="并发操作对数据的不一致性"></a>并发操作对数据的不一致性</h3><h4 id="并发操作带来的三个问题"><a href="#并发操作带来的三个问题" class="headerlink" title="并发操作带来的三个问题"></a>并发操作带来的三个问题</h4><ol>
 <li>丢失修改</li>
-<li>污读<br><img src="https://img2023.cnblogs.com/blog/2770491/202302/2770491-20230224202644873-1037290822.png" alt="数据污读案例"><br>余额应该为 1100 元才对！请看 T6 时间点，事务 A 此时查询余额为 900 元，这个数据就是脏数据，它是事务 A 造成的，明显事务没有进行隔离，渗过来了，乱套了。</li>
-<li>不可重读<br><img src="https://img2023.cnblogs.com/blog/2770491/202302/2770491-20230224202722726-1749880978.png" alt="不可重读的案例"><br>事务 A 其实除了查询了两次以外，其他什么事情都没有做，结果钱就从 1000 变成 0 了，这就是重复读了。其实这样也是合理的，事务 B 提交了事务，数据库将结果进行了持久化，事务 A 再次读取自然就发生了变化。</li>
+<li>污读<br><img src="https://i.postimg.cc/5yfGgNJm/2770491-20230224202644873-1037290822.png" alt="数据污读案例"><br>余额应该为 1100 元才对！请看 T6 时间点，事务 A 此时查询余额为 900 元，这个数据就是脏数据，它是事务 A 造成的，明显事务没有进行隔离，渗过来了，乱套了。</li>
+<li>不可重读<br><img src="https://i.postimg.cc/50SKXdzQ/2770491-20230224202722726-1749880978.png" alt="不可重读的案例"><br>事务 A 其实除了查询了两次以外，其他什么事情都没有做，结果钱就从 1000 变成 0 了，这就是重复读了。其实这样也是合理的，事务 B 提交了事务，数据库将结果进行了持久化，事务 A 再次读取自然就发生了变化。</li>
 </ol>
 <p><strong>并发操作破坏了事务的&#x3D;&#x3D;隔离性&#x3D;&#x3D;</strong></p>
 <h3 id="封锁及其产生问题的解决"><a href="#封锁及其产生问题的解决" class="headerlink" title="封锁及其产生问题的解决"></a>封锁及其产生问题的解决</h3><h4 id="封锁的类型"><a href="#封锁的类型" class="headerlink" title="封锁的类型"></a>封锁的类型</h4><ul>
@@ -183,19 +183,19 @@
 <li>一次封锁法<br>要求每个事务必须一次将所有要使用的数据全部加锁，否则就不能继续执行；</li>
 <li>顺序封锁法<br>是预先对数据对象规定一个封锁顺序，所有事务都按这个顺序实行封锁。</li>
 </ul>
-<h3 id="存储过程"><a href="#存储过程" class="headerlink" title="存储过程"></a>存储过程</h3><h4 id="存储过程的特点"><a href="#存储过程的特点" class="headerlink" title="存储过程的特点"></a>存储过程的特点</h4><p><img src="https://img2023.cnblogs.com/blog/2770491/202302/2770491-20230224202745127-2014565866.png" alt="存储过程的特点"></p>
+<h3 id="存储过程"><a href="#存储过程" class="headerlink" title="存储过程"></a>存储过程</h3><h4 id="存储过程的特点"><a href="#存储过程的特点" class="headerlink" title="存储过程的特点"></a>存储过程的特点</h4><p><img src="https://i.postimg.cc/nhTv9FSJ/2770491-20230224202745127-2014565866.png" alt="存储过程的特点"></p>
 <h4 id="存储过程与函数的区别"><a href="#存储过程与函数的区别" class="headerlink" title="存储过程与函数的区别"></a>存储过程与函数的区别</h4><ol>
 <li>存储过程是预编译的，执行效率比函数高。</li>
 <li>存储过程可以不返回任何值，也可以返回多个输出变量，但函数有且必须有一个返回值。</li>
 <li>存储过程必须单独执行，而函数可以嵌入到表达式中，使用更灵活。</li>
 </ol>
-<h4 id="创建存储过程"><a href="#创建存储过程" class="headerlink" title="创建存储过程"></a>创建存储过程</h4><p><img src="https://img2023.cnblogs.com/blog/2770491/202302/2770491-20230224202812795-1896531575.png" alt="语法格式"></p>
+<h4 id="创建存储过程"><a href="#创建存储过程" class="headerlink" title="创建存储过程"></a>创建存储过程</h4><p><img src="https://i.postimg.cc/J4nYzFzt/2770491-20230224202812795-1896531575.png" alt="语法格式"></p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> PROC[EDURE] procedure_name</span><br><span class="line">[&#123;<span class="variable">@parameter</span>  data_type&#125;[<span class="operator">=</span><span class="keyword">default</span>]</span><br><span class="line">    [<span class="keyword">OUT</span><span class="operator">|</span>OUTPUT][READONLY][,…n ]]</span><br><span class="line">[<span class="keyword">WITH</span>[ENCRYPTION[,…n ]]</span><br><span class="line"><span class="keyword">AS</span> &#123;<span class="operator">&lt;</span>sql_statement<span class="operator">&gt;</span>[;][…n ]&#125;[;]</span><br><span class="line"></span><br><span class="line"><span class="comment">-- procedure_name：存储过程的名称</span></span><br><span class="line"><span class="comment">-- @parameter：存储过程中的参数</span></span><br><span class="line"><span class="comment">-- data_type：参数的数据类型</span></span><br><span class="line"><span class="comment">-- Default：参数的默认值</span></span><br><span class="line"><span class="comment">-- OUTPUT：指示该参数是输出参数</span></span><br><span class="line"><span class="comment">-- READONLY：指示该参数是只读的</span></span><br><span class="line"><span class="comment">-- ENCRYPTION：指示加密存储</span></span><br><span class="line"><span class="comment">-- sql_statement:包含在过程中的一个或多个 T-SQL 语句</span></span><br></pre></td></tr></table></figure>
 
 <h4 id="实例：学生数据库存储过程"><a href="#实例：学生数据库存储过程" class="headerlink" title="实例：学生数据库存储过程"></a>实例：学生数据库存储过程</h4><p>针对学生课程数据库，编写存储过程，查询大数据专业学生每个学生选课情况，包括学号，姓名，课程名，查询结果使用@sno 、@sname 和@cname 输出。</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">procedure</span>  selectcourses</span><br><span class="line">  ( <span class="variable">@sno</span> <span class="type">int</span> output,</span><br><span class="line">  <span class="variable">@sname</span> <span class="type">varchar</span>(<span class="number">20</span>) output,</span><br><span class="line">  <span class="variable">@cname</span> <span class="type">varchar</span>(<span class="number">20</span>) output)</span><br><span class="line"><span class="keyword">as</span></span><br><span class="line">   <span class="keyword">select</span> <span class="variable">@sno</span> <span class="operator">=</span>学号,<span class="variable">@sname</span><span class="operator">=</span>姓名,<span class="variable">@cname</span><span class="operator">=</span>课程名</span><br><span class="line">    <span class="keyword">from</span> 学生,课程,选课</span><br><span class="line">    <span class="keyword">where</span> 学生.学号<span class="operator">=</span>选课.学号 <span class="keyword">and</span> 选课.课程号<span class="operator">=</span>课程.课程号 <span class="keyword">and</span> 所在系<span class="operator">=</span>’大数据’</span><br></pre></td></tr></table></figure>
 
-<h3 id="触发器"><a href="#触发器" class="headerlink" title="触发器"></a>触发器</h3><p><img src="https://img2023.cnblogs.com/blog/2770491/202302/2770491-20230224202831968-2110478365.png" alt="img"></p>
+<h3 id="触发器"><a href="#触发器" class="headerlink" title="触发器"></a>触发器</h3><p><img src="https://i.postimg.cc/GtSQDcmt/2770491-20230224202831968-2110478365.png" alt="img"></p>
 <h4 id="触发器的分类："><a href="#触发器的分类：" class="headerlink" title="触发器的分类："></a>触发器的分类：</h4><ol>
 <li><p>按照触发事件分类：</p>
 <ul>
@@ -235,7 +235,7 @@
 <h4 id="触发器的工作原理"><a href="#触发器的工作原理" class="headerlink" title="触发器的工作原理"></a>触发器的工作原理</h4><ul>
 <li>DML 触发器</li>
 </ul>
-<p><img src="https://img2023.cnblogs.com/blog/2770491/202302/2770491-20230224202909283-1748931669.png" alt="img"></p>
+<p><img src="https://i.postimg.cc/sx1Pst4r/2770491-20230224202909283-1748931669.png" alt="img"></p>
 <ul>
 <li><p>INSERT 触发器</p>
 <p>当对表进行 INSERT 操作时，INSERT 触发器被激发，新的数据行被添加到创建触发器的表和 Insert 表。</p>
@@ -664,7 +664,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2023/03/13/%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8A%80%E6%9C%AF/" data-id="clf5luea60001esuggxe21pb2" data-title="高级数据库技术" class="article-share-link">分享</a>
+      <a data-url="http://example.com/2023/03/13/%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8A%80%E6%9C%AF/" data-id="clf5m46kn0000xsug71faefcn" data-title="高级数据库技术" class="article-share-link">分享</a>
       
       
       
