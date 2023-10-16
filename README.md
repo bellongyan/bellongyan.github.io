@@ -1,1 +1,7 @@
-"# bellongyan.github.io" 
+# 简历
+
+## 基本信息
+
+|姓名|龙琰|
+|:---:|:---:|
+|邮箱|longyan0524@foxmail.com|
