@@ -5,6 +5,9 @@ body{
 .full {
     width: 100%;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     padding: 0;
     margin: 0;
 }
