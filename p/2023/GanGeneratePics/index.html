@@ -1,0 +1,412 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>PaddlePaddle 飞桨实现GAN生成对抗网络生成MINIST手写数字图像 | 龙火火的个人博客</title><meta name="author" content="Long Yan"><meta name="copyright" content="Long Yan"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="import paddlefrom paddle.nn import Conv2D, MaxPool2D, Linear, BatchNorm,Upsampleimport numpy as npimport matplotlib.pyplot as plt &#x2F;opt&#x2F;conda&#x2F;envs&#x2F;python35-paddle120-env&#x2F;lib&#x2F;python3.7&#x2F;site-packages&#x2F;pad">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PaddlePaddle 飞桨实现GAN生成对抗网络生成MINIST手写数字图像">
+<meta property="og:url" content="https://bellongyan.eu.org/p/2023/GanGeneratePics/index.html">
+<meta property="og:site_name" content="龙火火的个人博客">
+<meta property="og:description" content="import paddlefrom paddle.nn import Conv2D, MaxPool2D, Linear, BatchNorm,Upsampleimport numpy as npimport matplotlib.pyplot as plt &#x2F;opt&#x2F;conda&#x2F;envs&#x2F;python35-paddle120-env&#x2F;lib&#x2F;python3.7&#x2F;site-packages&#x2F;pad">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://bellongyan.eu.org/img/favicon.png">
+<meta property="article:published_time" content="2023-05-11T07:07:00.000Z">
+<meta property="article:modified_time" content="2023-05-11T07:07:00.000Z">
+<meta property="article:author" content="Long Yan">
+<meta property="article:tag" content="深度学习">
+<meta property="article:tag" content="paddlepaddle">
+<meta property="article:tag" content="飞桨">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://bellongyan.eu.org/img/favicon.png"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://bellongyan.eu.org/p/2023/GanGeneratePics/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?b015e180da4331167edb013b1aa21b2c";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'PaddlePaddle 飞桨实现GAN生成对抗网络生成MINIST手写数字图像',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2023-05-11 15:07:00'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/favicon.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">3</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa fa-graduation-cap"></i><span> 博文</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fas fa-list"></i><span> 生活</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于笔者</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a href="/" title="龙火火的个人博客"><span class="site-name">龙火火的个人博客</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fa fa-graduation-cap"></i><span> 博文</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw fas fa-list"></i><span> 生活</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于笔者</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">PaddlePaddle 飞桨实现GAN生成对抗网络生成MINIST手写数字图像</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2023-05-11T07:07:00.000Z" title="发表于 2023-05-11 15:07:00">2023-05-11</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2023-05-11T07:07:00.000Z" title="更新于 2023-05-11 15:07:00">2023-05-11</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">3.6k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>17分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="PaddlePaddle 飞桨实现GAN生成对抗网络生成MINIST手写数字图像"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> paddle</span><br><span class="line"><span class="keyword">from</span> paddle.nn <span class="keyword">import</span> Conv2D, MaxPool2D, Linear, BatchNorm,Upsample</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br></pre></td></tr></table></figure>
+<pre><code>/opt/conda/envs/python35-paddle120-env/lib/python3.7/site-packages/paddle/fluid/layers/utils.py:26: DeprecationWarning: `np.int` is a deprecated alias for the builtin `int`. To silence this warning, use `int` by itself. Doing this will not modify any behavior and is safe. When replacing `np.int`, you may wish to use e.g. `np.int64` or `np.int32` to specify the precision. If you wish to review your current use, check the release note link for additional information.
+Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
+  def convert_to_list(value, n, name, dtype=np.int):
+/opt/conda/envs/python35-paddle120-env/lib/python3.7/site-packages/matplotlib/__init__.py:107: DeprecationWarning: Using or importing the ABCs from &#39;collections&#39; instead of from &#39;collections.abc&#39; is deprecated, and in 3.8 it will stop working
+  from collections import MutableMapping
+/opt/conda/envs/python35-paddle120-env/lib/python3.7/site-packages/matplotlib/rcsetup.py:20: DeprecationWarning: Using or importing the ABCs from &#39;collections&#39; instead of from &#39;collections.abc&#39; is deprecated, and in 3.8 it will stop working
+  from collections import Iterable, Mapping
+/opt/conda/envs/python35-paddle120-env/lib/python3.7/site-packages/matplotlib/colors.py:53: DeprecationWarning: Using or importing the ABCs from &#39;collections&#39; instead of from &#39;collections.abc&#39; is deprecated, and in 3.8 it will stop working
+  from collections import Sized
+</code></pre><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">train_reader = paddle.vision.datasets.MNIST(mode=<span class="string">&#x27;train&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;训练集样本数:&quot;</span>, <span class="built_in">len</span>(train_reader))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;样本形状:&quot;</span>, np.array(train_reader[<span class="number">0</span>][<span class="number">0</span>]).shape)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;标签形状:&quot;</span>, np.array(train_reader[<span class="number">0</span>][<span class="number">1</span>]).shape)</span><br></pre></td></tr></table></figure>
+<pre><code>训练集样本数: 60000
+样本形状: (28, 28)
+标签形状: (1,)
+</code></pre><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"># 噪声维度</span></span><br><span class="line">Z_DIM = <span class="number">100</span></span><br><span class="line">BATCH_SIZE = <span class="number">128</span></span><br><span class="line"></span><br><span class="line">paddle.vision.set_image_backend(<span class="string">&#x27;cv2&#x27;</span>)</span><br><span class="line">mnist_generator = paddle.io.DataLoader(paddle.vision.datasets.MNIST(mode=<span class="string">&#x27;train&#x27;</span>),</span><br><span class="line">                                       batch_size=BATCH_SIZE, shuffle=<span class="literal">True</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成假图片的reader, 噪声生成，通过由噪声来生成假的图片数据输入</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ZReader</span>(paddle.io.Dataset):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, z_dim</span>):</span><br><span class="line">        <span class="built_in">super</span>(ZReader, <span class="variable language_">self</span>).__init__()</span><br><span class="line">        <span class="variable language_">self</span>.z_dim = z_dim</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__getitem__</span>(<span class="params">self, index</span>):</span><br><span class="line">        <span class="keyword">return</span> np.random.normal(<span class="number">0.0</span>, <span class="number">1.0</span>, (<span class="variable language_">self</span>.z_dim,<span class="number">1</span>,<span class="number">1</span>)).astype(<span class="string">&#x27;float32&#x27;</span>)<span class="comment">#正态分布，正态分布的均值、标准差、参数</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__len__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">int</span>(<span class="number">1e8</span>)  <span class="comment"># a large number</span></span><br><span class="line"></span><br><span class="line">z_dataset = ZReader(Z_DIM)</span><br><span class="line">z_generator = paddle.io.DataLoader(z_dataset, batch_size=BATCH_SIZE)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">image,label =<span class="built_in">next</span>(mnist_generator())</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;图像数据形状和对应数据为:&quot;</span>, image.shape)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;图像标签形状和对应数据为:&quot;</span>, label.shape)</span><br><span class="line"></span><br><span class="line">plt.imshow(image[<span class="number">0</span>].numpy().astype(np.uint8)) <span class="comment"># (28,28)</span></span><br><span class="line">plt.show</span><br></pre></td></tr></table></figure>
+<pre><code>/opt/conda/envs/python35-paddle120-env/lib/python3.7/site-packages/paddle/fluid/dataloader/dataloader_iter.py:89: DeprecationWarning: `np.bool` is a deprecated alias for the builtin `bool`. To silence this warning, use `bool` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.bool_` here.
+Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
+  if isinstance(slot[0], (np.ndarray, np.bool, numbers.Number)):
+
+
+图像数据形状和对应数据为: [128, 28, 28]
+图像标签形状和对应数据为: [128, 1]
+
+
+W0511 14:09:22.929143   892 device_context.cc:362] Please NOTE: device: 0, GPU Compute Capability: 7.0, Driver API Version: 11.2, Runtime API Version: 10.1
+W0511 14:09:22.933797   892 device_context.cc:372] device: 0, cuDNN Version: 7.6.
+/opt/conda/envs/python35-paddle120-env/lib/python3.7/site-packages/matplotlib/cbook/__init__.py:2349: DeprecationWarning: Using or importing the ABCs from &#39;collections&#39; instead of from &#39;collections.abc&#39; is deprecated, and in 3.8 it will stop working
+  if isinstance(obj, collections.Iterator):
+/opt/conda/envs/python35-paddle120-env/lib/python3.7/site-packages/matplotlib/cbook/__init__.py:2366: DeprecationWarning: Using or importing the ABCs from &#39;collections&#39; instead of from &#39;collections.abc&#39; is deprecated, and in 3.8 it will stop working
+  return list(data) if isinstance(data, collections.MappingView) else data
+
+
+
+
+
+&lt;function matplotlib.pyplot.show(*args, **kw)&gt;
+
+
+
+/opt/conda/envs/python35-paddle120-env/lib/python3.7/site-packages/matplotlib/image.py:425: DeprecationWarning: np.asscalar(a) is deprecated since NumPy v1.16, use a.item() instead
+  a_min = np.asscalar(a_min.astype(scaled_dtype))
+/opt/conda/envs/python35-paddle120-env/lib/python3.7/site-packages/matplotlib/image.py:426: DeprecationWarning: np.asscalar(a) is deprecated since NumPy v1.16, use a.item() instead
+  a_max = np.asscalar(a_max.astype(scaled_dtype))
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511144847090-516948239.png" alt="img"></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">##测试一下噪声</span></span><br><span class="line">z_tmp = <span class="built_in">next</span>(z_generator())</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;一个batch噪声z的形状：&#x27;</span>, z_tmp[<span class="number">0</span>].shape)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<pre><code>一个batch噪声z的形状： [128, 100, 1, 1]
+</code></pre><h2 id="GAN-网络"><a href="#GAN-网络" class="headerlink" title="GAN 网络"></a>GAN 网络</h2><p>GAN 性能的提升从生成器 G 和判别器 D 进行左右互搏、交替完善的过程得到的。所以其 G 网络和 D 网络的能力应该设计得相近，复杂度也差不多。这个项目中的生成器，采用了两个全链接层接两组上采样和转置卷积层，将输入的噪声 Z 逐渐转化为 1×28×28 的单通道图片输出。</p>
+<p>生成器结构：</p>
+<p><img src="https://ai-studio-static-online.cdn.bcebos.com/625f6642177144c49bcd01b05a78e19094fe74d0f51a4cdb989648d3adcbe362" style="height:400px;width:600px"></p>
+<p>判别器的结构正好相反，先通过两组卷积和池化层将输入的图片转化为越来越小的特征图，再经过两层全链接层，输出图片是真是假的二分类结果。</p>
+<p>判别器结构：<br><br/></p>
+<p><img src="https://ai-studio-static-online.cdn.bcebos.com/d3a0dc774d0d41758bc674deb189a76e653815de352c4e6d951807be13baec91" style="height:400px;width:600px"></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> paddle</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 判别器 D</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">D</span>(paddle.nn.Layer):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, name_scope</span>):</span><br><span class="line">        <span class="built_in">super</span>(D, <span class="variable language_">self</span>).__init__(name_scope)</span><br><span class="line">        name_scope = <span class="variable language_">self</span>.full_name()</span><br><span class="line">        <span class="comment">#</span></span><br><span class="line">        <span class="comment"># My_D的代码</span></span><br><span class="line">        <span class="variable language_">self</span>.conv1 = paddle.fluid.Conv2D(num_channels=<span class="number">1</span>, num_filters=<span class="number">64</span>, filter_size=<span class="number">3</span>)</span><br><span class="line">        <span class="variable language_">self</span>.bn1 = paddle.nn.BatchNorm(num_channels=<span class="number">64</span>, act=<span class="string">&#x27;leaky_relu&#x27;</span>)</span><br><span class="line">        <span class="variable language_">self</span>.pool1 = paddle.fluid.Pool2D(pool_size=<span class="number">2</span>, pool_stride=<span class="number">2</span>)</span><br><span class="line">        <span class="variable language_">self</span>.conv2 = paddle.fluid.Conv2D(num_channels=<span class="number">64</span>, num_filters=<span class="number">128</span>, filter_size=<span class="number">3</span>)</span><br><span class="line">        <span class="variable language_">self</span>.bn2 = paddle.nn.BatchNorm(num_channels=<span class="number">128</span>, act=<span class="string">&#x27;leaky_relu&#x27;</span>)</span><br><span class="line">        <span class="variable language_">self</span>.pool2 = paddle.fluid.Pool2D(pool_size=<span class="number">2</span>, pool_stride=<span class="number">2</span>)</span><br><span class="line">        <span class="variable language_">self</span>.fc1 = paddle.fluid.Linear(input_dim=<span class="number">128</span> * <span class="number">5</span> * <span class="number">5</span>, output_dim=<span class="number">1024</span>)</span><br><span class="line">        <span class="variable language_">self</span>.bnfc1 = paddle.nn.BatchNorm(num_channels=<span class="number">1024</span>, act=<span class="string">&#x27;leaky_relu&#x27;</span>)</span><br><span class="line">        <span class="variable language_">self</span>.fc2 = paddle.fluid.Linear(input_dim=<span class="number">1024</span>, output_dim=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, img</span>):</span><br><span class="line">        <span class="comment">#</span></span><br><span class="line">        <span class="comment"># My_G forward的代码</span></span><br><span class="line">        y = <span class="variable language_">self</span>.conv1(img)</span><br><span class="line">        y = <span class="variable language_">self</span>.bn1(y)</span><br><span class="line">        y = <span class="variable language_">self</span>.pool1(y)</span><br><span class="line">        y = <span class="variable language_">self</span>.conv2(y)</span><br><span class="line">        y = <span class="variable language_">self</span>.bn2(y)</span><br><span class="line">        y = <span class="variable language_">self</span>.pool2(y)</span><br><span class="line">        y = paddle.reshape(x=y, shape=[-<span class="number">1</span>, <span class="number">128</span> * <span class="number">5</span> * <span class="number">5</span>])</span><br><span class="line">        y = <span class="variable language_">self</span>.fc1(y)</span><br><span class="line">        y = <span class="variable language_">self</span>.bnfc1(y)</span><br><span class="line">        y = <span class="variable language_">self</span>.fc2(y)</span><br><span class="line">        <span class="keyword">return</span> y</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成网络G</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">G</span>(paddle.nn.Layer):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, name_scope</span>):</span><br><span class="line">        <span class="built_in">super</span>(G, <span class="variable language_">self</span>).__init__(name_scope)</span><br><span class="line">        name_scope = <span class="variable language_">self</span>.full_name()</span><br><span class="line">        <span class="comment"># 第一组全连接和BN层</span></span><br><span class="line">        <span class="variable language_">self</span>.fc1 = paddle.fluid.Linear(input_dim=<span class="number">100</span>, output_dim=<span class="number">1024</span>)</span><br><span class="line">        <span class="variable language_">self</span>.bn1 = paddle.nn.BatchNorm(num_channels=<span class="number">1024</span>, act=<span class="string">&#x27;tanh&#x27;</span>)</span><br><span class="line">        <span class="comment"># 第二组全连接和BN层</span></span><br><span class="line">        <span class="variable language_">self</span>.fc2 = paddle.fluid.Linear(input_dim=<span class="number">1024</span>, output_dim=<span class="number">128</span> * <span class="number">7</span> * <span class="number">7</span>)</span><br><span class="line">        <span class="variable language_">self</span>.bn2 = paddle.nn.BatchNorm(num_channels=<span class="number">128</span> * <span class="number">7</span> * <span class="number">7</span>, act=<span class="string">&#x27;tanh&#x27;</span>)</span><br><span class="line">        <span class="comment"># 第一组卷积运算（卷积前进行上采样，以扩大特征图）</span></span><br><span class="line">        <span class="comment"># 注：此处使用转置卷积的效果似乎不如上采样后直接用卷积，转置卷积生成的图片噪点较多</span></span><br><span class="line">        <span class="variable language_">self</span>.conv1 = paddle.fluid.Conv2D(num_channels=<span class="number">128</span>, num_filters=<span class="number">64</span>, filter_size=<span class="number">5</span>, padding=<span class="number">2</span>)</span><br><span class="line">        <span class="variable language_">self</span>.bn3 = paddle.nn.BatchNorm(num_channels=<span class="number">64</span>, act=<span class="string">&#x27;tanh&#x27;</span>)</span><br><span class="line">        <span class="comment"># 第二组卷积运算（卷积前进行上采样，以扩大特征图）</span></span><br><span class="line">        <span class="variable language_">self</span>.conv2 = paddle.fluid.Conv2D(num_channels=<span class="number">64</span>, num_filters=<span class="number">1</span>, filter_size=<span class="number">5</span>, padding=<span class="number">2</span>, act=<span class="string">&#x27;tanh&#x27;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, z</span>):</span><br><span class="line">        z = paddle.reshape(x=z, shape=[-<span class="number">1</span>, <span class="number">100</span>])</span><br><span class="line">        y = <span class="variable language_">self</span>.fc1(z)</span><br><span class="line">        y = <span class="variable language_">self</span>.bn1(y)</span><br><span class="line">        y = <span class="variable language_">self</span>.fc2(y)</span><br><span class="line">        y = <span class="variable language_">self</span>.bn2(y)</span><br><span class="line">        y = paddle.reshape(x=y, shape=[-<span class="number">1</span>, <span class="number">128</span>, <span class="number">7</span>, <span class="number">7</span>])</span><br><span class="line">        <span class="comment"># 第一组卷积前进行上采样以扩大特征图</span></span><br><span class="line">        y = paddle.fluid.layers.image_resize(y, scale=<span class="number">2</span>)</span><br><span class="line">        y = <span class="variable language_">self</span>.conv1(y)</span><br><span class="line">        y = <span class="variable language_">self</span>.bn3(y)</span><br><span class="line">        <span class="comment"># 第二组卷积前进行上采样以扩大特征图</span></span><br><span class="line">        y = paddle.fluid.layers.image_resize(y, scale=<span class="number">2</span>)</span><br><span class="line">        y = <span class="variable language_">self</span>.conv2(y)</span><br><span class="line">        <span class="keyword">return</span> y</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">paddle.Model(G(<span class="string">&#x27;G&#x27;</span>)).summary((-<span class="number">1</span>,<span class="number">100</span>))</span><br></pre></td></tr></table></figure>
+<pre><code>---------------------------------------------------------------------------
+ Layer (type)       Input Shape          Output Shape         Param #
+===========================================================================
+   Linear-1          [[1, 100]]           [1, 1024]           103,424
+  BatchNorm-1       [[1, 1024]]           [1, 1024]            4,096
+   Linear-2         [[1, 1024]]           [1, 6272]          6,428,800
+  BatchNorm-2       [[1, 6272]]           [1, 6272]           25,088
+   Conv2D-1      [[1, 128, 14, 14]]    [1, 64, 14, 14]        204,864
+  BatchNorm-3    [[1, 64, 14, 14]]     [1, 64, 14, 14]          256
+   Conv2D-2      [[1, 64, 28, 28]]      [1, 1, 28, 28]         1,601
+===========================================================================
+Total params: 6,768,129
+Trainable params: 6,738,689
+Non-trainable params: 29,440
+---------------------------------------------------------------------------
+Input size (MB): 0.00
+Forward/backward pass size (MB): 0.31
+Params size (MB): 25.82
+Estimated Total Size (MB): 26.13
+---------------------------------------------------------------------------
+
+
+
+
+
+
+&#123;&#39;total_params&#39;: 6768129, &#39;trainable_params&#39;: 6738689&#125;
+</code></pre><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">paddle.Model(D(<span class="string">&#x27;D&#x27;</span>)).summary((-<span class="number">1</span>,<span class="number">1</span>,<span class="number">28</span>,<span class="number">28</span>))</span><br></pre></td></tr></table></figure>
+<pre><code>---------------------------------------------------------------------------
+ Layer (type)       Input Shape          Output Shape         Param #
+===========================================================================
+   Conv2D-3       [[1, 1, 28, 28]]     [1, 64, 26, 26]          640
+  BatchNorm-4    [[1, 64, 26, 26]]     [1, 64, 26, 26]          256
+   Pool2D-1      [[1, 64, 26, 26]]     [1, 64, 13, 13]           0
+   Conv2D-4      [[1, 64, 13, 13]]     [1, 128, 11, 11]       73,856
+  BatchNorm-5    [[1, 128, 11, 11]]    [1, 128, 11, 11]         512
+   Pool2D-2      [[1, 128, 11, 11]]     [1, 128, 5, 5]           0
+   Linear-3         [[1, 3200]]           [1, 1024]          3,277,824
+  BatchNorm-6       [[1, 1024]]           [1, 1024]            4,096
+   Linear-4         [[1, 1024]]             [1, 1]             1,025
+===========================================================================
+Total params: 3,358,209
+Trainable params: 3,353,345
+Non-trainable params: 4,864
+---------------------------------------------------------------------------
+Input size (MB): 0.00
+Forward/backward pass size (MB): 1.02
+Params size (MB): 12.81
+Estimated Total Size (MB): 13.83
+---------------------------------------------------------------------------
+
+
+
+
+
+
+&#123;&#39;total_params&#39;: 3358209, &#39;trainable_params&#39;: 3353345&#125;
+</code></pre><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">z_tmp = <span class="built_in">next</span>(z_generator())</span><br><span class="line">g_tmp = G(<span class="string">&#x27;G&#x27;</span>)</span><br><span class="line">tmp_g = g_tmp(z_tmp[<span class="number">0</span>]).numpy()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;生成器G生成图片数据的形状：&#x27;</span>, tmp_g.shape)</span><br><span class="line">plt.imshow(tmp_g[<span class="number">0</span>][<span class="number">0</span>])</span><br><span class="line">plt.show()</span><br><span class="line"></span><br><span class="line">d_tmp = D(<span class="string">&#x27;D&#x27;</span>)</span><br><span class="line">tmp_d = d_tmp(paddle.to_tensor(tmp_g)).numpy()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;判别器D判别生成的图片的概率数据形状：&#x27;</span>, tmp_d.shape)</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">max</span>(tmp_d))</span><br></pre></td></tr></table></figure>
+<pre><code>生成器G生成图片数据的形状： (128, 1, 28, 28)
+判别器D判别生成的图片的概率数据形状： (128, 1)
+[3.0552034]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511144914487-982094820.png" alt="img"></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line">%matplotlib inline</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show_image_grid</span>(<span class="params">images, batch_size=<span class="number">128</span>, pass_id=<span class="literal">None</span></span>):</span><br><span class="line">    fig = plt.figure(figsize=(<span class="number">8</span>, batch_size/<span class="number">32</span>))</span><br><span class="line">    gs = plt.GridSpec(<span class="built_in">int</span>(batch_size/<span class="number">16</span>), <span class="number">16</span>)</span><br><span class="line">    gs.update(wspace=<span class="number">0.05</span>, hspace=<span class="number">0.05</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i, image <span class="keyword">in</span> <span class="built_in">enumerate</span>(images):</span><br><span class="line">        ax = plt.subplot(gs[i])</span><br><span class="line">        plt.axis(<span class="string">&#x27;off&#x27;</span>)</span><br><span class="line">        ax.set_xticklabels([])</span><br><span class="line">        ax.set_yticklabels([])</span><br><span class="line">        ax.set_aspect(<span class="string">&#x27;equal&#x27;</span>)</span><br><span class="line">        plt.imshow(image[<span class="number">0</span>], cmap=<span class="string">&#x27;Greys_r&#x27;</span>)</span><br><span class="line">    plt.show()</span><br><span class="line"></span><br><span class="line">show_image_grid(tmp_g, BATCH_SIZE)</span><br></pre></td></tr></table></figure>
+<p><img src="../images/GanGeneratePics/2770491-20230511144928191-1649608948.png" alt="img"></p>
+<h2 id="网络训练"><a href="#网络训练" class="headerlink" title="网络训练"></a>网络训练</h2><p>网络的训练优化目标就是如下公式：</p>
+<script type="math/tex; mode=display">\min _{G} \max _{D} V(D, G)=\mathbb{E}_{\boldsymbol{x} \sim p_{\text {data } }(\boldsymbol{x})}[\log D(\boldsymbol{x})]+\mathbb{E}_{\boldsymbol{z} \sim p_{\boldsymbol{z} }(\boldsymbol{z})}[\log (1-D(G(\boldsymbol{z})))]</script><p>公式出自 Goodfellow 在 2014 年发表的论文<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1406.2661v1.pdf">Generative Adversarial Nets</a>。<br>这里简单介绍下公式的含义和如何应用到代码中。上式中等号左边的部分：</p>
+<p>$V(D, G)$表示的是生成样本和真实样本的差异度，可以使用二分类（真、假两个类别）的交叉商损失。</p>
+<p>$\max _{D} V(D,G)$表示在生成器固定的情况下，通过最大化交叉商损失$V(D, G)$来更新判别器 D 的参数。</p>
+<p>$\min _{G} \max _{D} V(D, G)$表示生成器要在判别器最大化真、假图片交叉商损失$\max _{D} V(D,G)$的情况下，最小化这个交叉商损失。</p>
+<p>等式的右边其实就是将等式左边的交叉商损失公式展开，并写成概率分布的期望形式。详细的推导请参见原论文《<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1406.2661v1.pdf">Generative Adversarial Nets</a>》。</p>
+<p>下面是训练模型的代码，有详细的注释。大致过程是：先用真图片训练一次判别器 d 的参数，再用生成器 g 生成的假图片训练一次判别器 d 的参数，最后用判别器 d 判断生成器 g 生成的假图片的概率值更新一次生成器 g 的参数，即每轮训练先训练两次判别器 d，再训练一次生成器 g，使得判别器 d 的能力始终稍稍高于生成器 g 一些。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> i, real_image <span class="keyword">in</span> <span class="built_in">enumerate</span>(mnist_generator()):</span><br><span class="line">    <span class="built_in">print</span>(real_image[<span class="number">0</span>].shape, <span class="built_in">len</span>(real_image[<span class="number">0</span>]))</span><br><span class="line">    <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
+<pre><code>[128, 28, 28] 128
+</code></pre><h2 id="训练代码"><a href="#训练代码" class="headerlink" title="训练代码"></a>训练代码</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> paddle.nn.functional <span class="keyword">as</span> F</span><br><span class="line">d = D(<span class="string">&#x27;D&#x27;</span>)</span><br><span class="line">d.train()</span><br><span class="line">g = G(<span class="string">&#x27;G&#x27;</span>)</span><br><span class="line">g.train()</span><br><span class="line"><span class="comment"># 创建优化方法</span></span><br><span class="line">real_d_optimizer = paddle.optimizer.Adam(learning_rate=<span class="number">1e-4</span>, parameters=d.parameters())</span><br><span class="line">fake_d_optimizer = paddle.optimizer.Adam(learning_rate=<span class="number">1e-4</span>, parameters=d.parameters())</span><br><span class="line">g_optimizer = paddle.optimizer.Adam(learning_rate=<span class="number">5e-4</span>, parameters=g.parameters())</span><br><span class="line"></span><br><span class="line">iteration_num = <span class="number">0</span></span><br><span class="line">epoch_num = <span class="number">5</span></span><br><span class="line"><span class="keyword">for</span> epoch <span class="keyword">in</span> <span class="built_in">range</span>(epoch_num):</span><br><span class="line">    <span class="keyword">for</span> i, (real_image, label) <span class="keyword">in</span> <span class="built_in">enumerate</span>(mnist_generator()):</span><br><span class="line">        <span class="comment"># 丢弃不满整个batch_size的数据</span></span><br><span class="line">        <span class="keyword">if</span>(<span class="built_in">len</span>(real_image) != BATCH_SIZE):</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        iteration_num += <span class="number">1</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        判别器d通过最小化输入真实图片时判别器d的输出与真值标签ones的交叉熵损失，来优化判别器的参数，</span></span><br><span class="line"><span class="string">        以增加判别器d识别真实图片real_image为真值标签ones的概率。</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        <span class="comment"># 将MNIST数据集里的图片读入real_image，将真值标签ones用数字1初始化</span></span><br><span class="line">        real_image = real_image.unsqueeze(<span class="number">1</span>)</span><br><span class="line">        real_image = paddle.to_tensor(real_image)</span><br><span class="line">        ones = paddle.to_tensor(np.ones([<span class="built_in">len</span>(real_image), <span class="number">1</span>]).astype(<span class="string">&#x27;float32&#x27;</span>))</span><br><span class="line">        <span class="comment"># 计算判别器d判断真实图片的概率</span></span><br><span class="line">        p_real = d(real_image)</span><br><span class="line">        <span class="comment"># 计算判别真图片为真的损失</span></span><br><span class="line">        real_cost = F.binary_cross_entropy_with_logits(p_real, ones)</span><br><span class="line">        real_avg_cost = paddle.mean(real_cost)</span><br><span class="line">        <span class="comment"># 反向传播更新判别器d的参数</span></span><br><span class="line">        real_avg_cost.backward()</span><br><span class="line">        real_d_optimizer.minimize(real_avg_cost)</span><br><span class="line">        d.clear_gradients()</span><br><span class="line"></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        判别器d通过最小化输入生成器g生成的假图片g(z)时判别器的输出与假值标签zeros的交叉熵损失，</span></span><br><span class="line"><span class="string">        来优化判别器d的参数，以增加判别器d识别生成器g生成的假图片g(z)为假值标签zeros的概率。</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        <span class="comment"># 创建高斯分布的噪声z，将假值标签zeros初始化为0</span></span><br><span class="line">        z = <span class="built_in">next</span>(z_generator())</span><br><span class="line">        zeros = paddle.to_tensor(np.zeros([<span class="built_in">len</span>(real_image), <span class="number">1</span>]).astype(<span class="string">&#x27;float32&#x27;</span>))</span><br><span class="line">        <span class="comment"># 判别器d判断生成器g生成的假图片的概率</span></span><br><span class="line">        p_fake = d(g(z[<span class="number">0</span>]))</span><br><span class="line">        <span class="comment"># 计算判别生成器g生成的假图片为假的损失</span></span><br><span class="line">        fake_cost = F.binary_cross_entropy_with_logits(p_fake, zeros)</span><br><span class="line">        fake_avg_cost = paddle.mean(fake_cost)</span><br><span class="line">        <span class="comment"># 反向传播更新判别器d的参数</span></span><br><span class="line">        fake_avg_cost.backward()</span><br><span class="line">        fake_d_optimizer.minimize(fake_avg_cost)</span><br><span class="line">        d.clear_gradients()</span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        生成器g通过最小化判别器d判别生成器生成的假图片g(z)为真的概率d(fake)与真值标签ones的交叉熵损失，</span></span><br><span class="line"><span class="string">        来优化生成器g的参数，以增加生成器g使判别器d判别其生成的假图片g(z)为真值标签ones的概率。</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        <span class="comment"># 生成器用输入的高斯噪声z生成假图片</span></span><br><span class="line">        fake = g(z[<span class="number">0</span>])</span><br><span class="line">        <span class="comment"># 计算判别器d判断生成器g生成的假图片的概率</span></span><br><span class="line">        p_confused = d(fake)</span><br><span class="line">        <span class="comment"># 使用判别器d判断生成器g生成的假图片的概率与真值ones的交叉熵计算损失</span></span><br><span class="line">        g_cost = paddle.fluid.layers.sigmoid_cross_entropy_with_logits(p_confused, ones)</span><br><span class="line">        g_avg_cost = paddle.mean(x=g_cost)</span><br><span class="line">        <span class="comment"># 反向传播更新生成器g的参数</span></span><br><span class="line">        g_avg_cost.backward()</span><br><span class="line">        g_optimizer.minimize(g_avg_cost)</span><br><span class="line">        g.clear_gradients()</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 打印输出</span></span><br><span class="line">        <span class="keyword">if</span>(iteration_num % <span class="number">100</span> == <span class="number">0</span>):</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">&#x27;epoch =&#x27;</span>, epoch, <span class="string">&#x27;, batch =&#x27;</span>, i, <span class="string">&#x27;, real_d_loss =&#x27;</span>, real_avg_cost.numpy(),</span><br><span class="line">                <span class="string">&#x27;, fake_d_loss =&#x27;</span>, fake_avg_cost.numpy(), <span class="string">&#x27;g_loss =&#x27;</span>, g_avg_cost.numpy())</span><br><span class="line">            show_image_grid(fake.numpy(), BATCH_SIZE, epoch)</span><br><span class="line">            <span class="comment"># 存储模型</span></span><br><span class="line">paddle.save(g.state_dict(), <span class="string">&#x27;./output/&#x27;</span>+<span class="string">&#x27;g&#x27;</span>)</span><br><span class="line">paddle.save(d.state_dict(), <span class="string">&#x27;./output/&#x27;</span>+<span class="string">&#x27;d_o_r&#x27;</span>)</span><br><span class="line">paddle.save(d.state_dict(), <span class="string">&#x27;./output/&#x27;</span>+<span class="string">&#x27;d_o_f&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>epoch = 0 , batch = 99 , real_d_loss = [0.63881606] , fake_d_loss = [0.43077955] g_loss = [1.1314435]
+
+
+/opt/conda/envs/python35-paddle120-env/lib/python3.7/site-packages/matplotlib/image.py:425: DeprecationWarning: np.asscalar(a) is deprecated since NumPy v1.16, use a.item() instead
+  a_min = np.asscalar(a_min.astype(scaled_dtype))
+/opt/conda/envs/python35-paddle120-env/lib/python3.7/site-packages/matplotlib/image.py:426: DeprecationWarning: np.asscalar(a) is deprecated since NumPy v1.16, use a.item() instead
+  a_max = np.asscalar(a_max.astype(scaled_dtype))
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511144950277-1324896489.png" alt="img"></p>
+<pre><code>epoch = 0 , batch = 199 , real_d_loss = [0.4727745] , fake_d_loss = [0.40940467] g_loss = [1.1723493]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145002195-1203362519.png" alt="img"></p>
+<pre><code>epoch = 0 , batch = 299 , real_d_loss = [0.3923043] , fake_d_loss = [0.38755333] g_loss = [1.2083172]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145011033-1880770436.png" alt="img"></p>
+<pre><code>epoch = 0 , batch = 399 , real_d_loss = [0.3553782] , fake_d_loss = [0.3865837] g_loss = [1.2023909]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145112574-582443905.png" alt="img"></p>
+<pre><code>epoch = 1 , batch = 31 , real_d_loss = [0.30362654] , fake_d_loss = [0.3808377] g_loss = [1.22538]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145447740-1001371440.png" alt="img"></p>
+<pre><code>epoch = 1 , batch = 131 , real_d_loss = [0.3126711] , fake_d_loss = [0.38687515] g_loss = [1.2130171]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145458301-1143052080.png" alt="img"></p>
+<pre><code>epoch = 1 , batch = 231 , real_d_loss = [0.273176] , fake_d_loss = [0.37318167] g_loss = [1.2494049]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145508808-239873142.png" alt="img"></p>
+<pre><code>epoch = 1 , batch = 331 , real_d_loss = [0.40979803] , fake_d_loss = [0.4624972] g_loss = [1.1285127]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145520269-1543039206.png" alt="img"></p>
+<pre><code>epoch = 1 , batch = 431 , real_d_loss = [0.5482184] , fake_d_loss = [0.4858724] g_loss = [1.1077986]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145531437-1634388380.png" alt="img"></p>
+<pre><code>epoch = 2 , batch = 63 , real_d_loss = [0.5916477] , fake_d_loss = [0.5695666] g_loss = [0.9861771]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145541092-1832221091.png" alt="img"></p>
+<pre><code>epoch = 2 , batch = 163 , real_d_loss = [0.6595901] , fake_d_loss = [0.54358363] g_loss = [1.0098863]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145550635-670965453.png" alt="img"></p>
+<pre><code>epoch = 2 , batch = 263 , real_d_loss = [0.7349342] , fake_d_loss = [0.5123524] g_loss = [1.0610704]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145600776-438275988.png" alt="img"></p>
+<pre><code>epoch = 2 , batch = 363 , real_d_loss = [0.88330436] , fake_d_loss = [0.51227736] g_loss = [1.0595765]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145619362-2032834226.png" alt="img"></p>
+<pre><code>epoch = 2 , batch = 463 , real_d_loss = [0.83836365] , fake_d_loss = [0.53332305] g_loss = [0.99540174]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145644891-56212330.png" alt="img"></p>
+<pre><code>epoch = 3 , batch = 95 , real_d_loss = [0.86019707] , fake_d_loss = [0.53724575] g_loss = [0.9913846]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145656006-1357629608.png" alt="img"></p>
+<pre><code>epoch = 3 , batch = 195 , real_d_loss = [0.8524647] , fake_d_loss = [0.5335064] g_loss = [1.0278957]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145706060-828861569.png" alt="img"></p>
+<pre><code>epoch = 3 , batch = 295 , real_d_loss = [0.90599334] , fake_d_loss = [0.5457525] g_loss = [0.9990233]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145719315-1020039163.png" alt="img"></p>
+<pre><code>epoch = 3 , batch = 395 , real_d_loss = [0.7981782] , fake_d_loss = [0.539215] g_loss = [0.98800594]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145730244-593632313.png" alt="img"></p>
+<pre><code>epoch = 4 , batch = 27 , real_d_loss = [0.8963315] , fake_d_loss = [0.5651827] g_loss = [0.94507515]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145742890-1745870663.png" alt="img"></p>
+<pre><code>epoch = 4 , batch = 127 , real_d_loss = [0.8121051] , fake_d_loss = [0.61096513] g_loss = [0.8886054]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145752307-1233940078.png" alt="img"></p>
+<pre><code>epoch = 4 , batch = 227 , real_d_loss = [0.7931969] , fake_d_loss = [0.5683154] g_loss = [0.9184775]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145804071-550907269.png" alt="img"></p>
+<pre><code>epoch = 4 , batch = 327 , real_d_loss = [0.8052078] , fake_d_loss = [0.55665344] g_loss = [0.947585]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145813128-1035986812.png" alt="img"></p>
+<pre><code>epoch = 4 , batch = 427 , real_d_loss = [0.9077438] , fake_d_loss = [0.52213967] g_loss = [0.9807905]
+</code></pre><p><img src="../images/GanGeneratePics/2770491-20230511145822294-1719077370.png" alt="img"></p>
+<h2 id="生成测试"><a href="#生成测试" class="headerlink" title="生成测试"></a>生成测试</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">z = <span class="built_in">next</span>(z_generator())</span><br><span class="line">fake = g(z[<span class="number">0</span>])</span><br><span class="line">show_image_grid(fake.numpy(), <span class="number">128</span>, <span class="number">0</span>)</span><br></pre></td></tr></table></figure>
+<p><img src="../images/GanGeneratePics/2770491-20230511145831836-214151350.png" alt="img"></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a target="_blank" rel="noopener" href="https://github.com/bellongyan/">Long Yan</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://bellongyan.eu.org/p/2023/GanGeneratePics/">https://bellongyan.eu.org/p/2023/GanGeneratePics/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://bellongyan.eu.org" target="_blank">龙火火的个人博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><a class="post-meta__tags" href="/tags/paddlepaddle/">paddlepaddle</a><a class="post-meta__tags" href="/tags/%E9%A3%9E%E6%A1%A8/">飞桨</a></div><div class="post_share"><div class="social-share" data-image="/img/favicon.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i>赞助</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.jpg" target="_blank"><img class="post-qr-code-img" src="/img/wechat.jpg" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/img/alipay.jpg" target="_blank"><img class="post-qr-code-img" src="/img/alipay.jpg" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/p/2023/DoNotPlayPhone/" title="别玩手机 图像分类比赛"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">别玩手机 图像分类比赛</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/p/2023/DoNotPlayPhone/" title="别玩手机 图像分类比赛"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-10</div><div class="title">别玩手机 图像分类比赛</div></div></a></div><div><a href="/p/2023/PaddleTransferLearningFixUserWarning/" title="解决PaddlePaddle飞桨在迁移学习使用预训练模型时更改num_classes参数出现警告"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-05-10</div><div class="title">解决PaddlePaddle飞桨在迁移学习使用预训练模型时更改num_classes参数出现警告</div></div></a></div></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/favicon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">Long Yan</div><div class="author-info__description">Talk is cheap, show me the code.</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">3</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/bellongyan" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:colorful.longyan@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content is-expand"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#GAN-%E7%BD%91%E7%BB%9C"><span class="toc-text">GAN 网络</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BD%91%E7%BB%9C%E8%AE%AD%E7%BB%83"><span class="toc-text">网络训练</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%AD%E7%BB%83%E4%BB%A3%E7%A0%81"><span class="toc-text">训练代码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%9F%E6%88%90%E6%B5%8B%E8%AF%95"><span class="toc-text">生成测试</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/p/2023/GanGeneratePics/" title="PaddlePaddle 飞桨实现GAN生成对抗网络生成MINIST手写数字图像">PaddlePaddle 飞桨实现GAN生成对抗网络生成MINIST手写数字图像</a><time datetime="2023-05-11T07:07:00.000Z" title="发表于 2023-05-11 15:07:00">2023-05-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/p/2023/DoNotPlayPhone/" title="别玩手机 图像分类比赛">别玩手机 图像分类比赛</a><time datetime="2023-05-10T10:20:00.000Z" title="发表于 2023-05-10 18:20:00">2023-05-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/p/2023/PaddleTransferLearningFixUserWarning/" title="解决PaddlePaddle飞桨在迁移学习使用预训练模型时更改num_classes参数出现警告">解决PaddlePaddle飞桨在迁移学习使用预训练模型时更改num_classes参数出现警告</a><time datetime="2023-05-09T16:28:00.000Z" title="发表于 2023-05-10 00:28:00">2023-05-10</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2024 By Long Yan</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      tags: 'ams'
+    },
+    chtml: {
+      scale: 1.1
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, '']
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.min.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typesetPromise()
+}</script><script>(() => {
+  const initValine = () => {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: 'UaPmZSTSOzQHYFU7SNvf16Mj-gzGzoHsz',
+      appKey: 'vQenxLzUXfBSZhrC3jl9V5oq',
+      avatar: 'monsterid',
+      serverURLs: '',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  const loadValine = async () => {
+    if (typeof Valine === 'function') initValine()
+    else {
+      await getScript('https://cdn.jsdelivr.net/npm/valine@1.5.1/dist/Valine.min.js')
+      initValine()
+    }
+  }
+
+  if ('Valine' === 'Valine' || !false) {
+    if (false) btf.loadComment(document.getElementById('vcomment'),loadValine)
+    else setTimeout(loadValine, 0)
+  } else {
+    window.loadOtherComment = loadValine
+  }
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.13.0"></script></div></div></body></html>
