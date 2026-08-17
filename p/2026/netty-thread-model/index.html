@@ -1,0 +1,279 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>（面试题）Netty 线程模型 | 龙火火的个人博客</title><meta name="author" content="Long Yan"><meta name="copyright" content="Long Yan"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="昨天面试一家公司，被问了一连串关于 Netty 线程模型的问题： “Netty 的 workerGroup 默认线程数是多少？”“为什么默认值是 CPU 核心数的两倍？”“EventLoop 为什么必须是单线程？”“那 Tomcat 为什么又需要那么多线程？Netty 为什么线程这么少？” 说实话，平时用 Netty 写写 demo 挺顺手，但被这么一串连问，脑子还是懵了一下。回去后认真整理了一遍">
+<meta property="og:type" content="article">
+<meta property="og:title" content="（面试题）Netty 线程模型">
+<meta property="og:url" content="https://bellongyan.eu.org/p/2026/netty-thread-model/">
+<meta property="og:site_name" content="龙火火的个人博客">
+<meta property="og:description" content="昨天面试一家公司，被问了一连串关于 Netty 线程模型的问题： “Netty 的 workerGroup 默认线程数是多少？”“为什么默认值是 CPU 核心数的两倍？”“EventLoop 为什么必须是单线程？”“那 Tomcat 为什么又需要那么多线程？Netty 为什么线程这么少？” 说实话，平时用 Netty 写写 demo 挺顺手，但被这么一串连问，脑子还是懵了一下。回去后认真整理了一遍">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://bellongyan.eu.org/img/favicon.png">
+<meta property="article:published_time" content="2026-03-11T06:57:00.000Z">
+<meta property="article:modified_time" content="2026-03-11T06:57:00.000Z">
+<meta property="article:author" content="Long Yan">
+<meta property="article:tag" content="Netty">
+<meta property="article:tag" content="Reactor">
+<meta property="article:tag" content="线程模型">
+<meta property="article:tag" content="面试题">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://bellongyan.eu.org/img/favicon.png"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://bellongyan.eu.org/p/2026/netty-thread-model/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><meta name="google-site-verification" content="google083024cd42b8ac55"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"limitCount":50,"languages":{"author":"作者: Long Yan","link":"链接: ","source":"来源: 龙火火的个人博客","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。"}},
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: ,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: true
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '（面试题）Netty 线程模型',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2026-03-11 14:57:00'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+          const isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches
+          const isNotSpecified = window.matchMedia('(prefers-color-scheme: no-preference)').matches
+          const hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+
+          if (t === undefined) {
+            if (isLightMode) activateLightMode()
+            else if (isDarkMode) activateDarkMode()
+            else if (isNotSpecified || hasNoSupport) {
+              const now = new Date()
+              const hour = now.getHours()
+              const isNight = hour <= 19:00 || hour >= 07:00
+              isNight ? activateDarkMode() : activateLightMode()
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addListener(e => {
+              if (saveToLocal.get('theme') === undefined) {
+                e.matches ? activateDarkMode() : activateLightMode()
+              }
+            })
+          } else if (t === 'light') activateLightMode()
+          else activateDarkMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 8.1.2"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/favicon.png" onerror="onerror=null;src='/image/404.png'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">6</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">13</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><span> 主页</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><span> 博文</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/archives/"><span> 归档</span></a></li><li><a class="site-page child" href="/tags/"><span> 标签</span></a></li><li><a class="site-page child" href="/categories/"><span> 分类</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><span> 生活</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><span> 影视</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('/img/background.png')"><nav id="nav"><span id="blog-info"><a href="/" title="龙火火的个人博客"><span class="site-name">龙火火的个人博客</span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><span> 主页</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><span> 博文</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/archives/"><span> 归档</span></a></li><li><a class="site-page child" href="/tags/"><span> 标签</span></a></li><li><a class="site-page child" href="/categories/"><span> 分类</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><span> 生活</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><span> 影视</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">（面试题）Netty 线程模型</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-03-11T06:57:00.000Z" title="发表于 2026-03-11 14:57:00">2026-03-11</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-03-11T06:57:00.000Z" title="更新于 2026-03-11 14:57:00">2026-03-11</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91/">后端开发</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">2.3k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>7分钟</span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><p>昨天面试一家公司，被问了一连串关于 Netty 线程模型的问题：</p>
+<p>“Netty 的 workerGroup 默认线程数是多少？”<br>“为什么默认值是 CPU 核心数的两倍？”<br>“EventLoop 为什么必须是单线程？”<br>“那 Tomcat 为什么又需要那么多线程？Netty 为什么线程这么少？”</p>
+<p>说实话，平时用 Netty 写写 demo 挺顺手，但被这么一串连问，脑子还是懵了一下。回去后认真整理了一遍，发现这些问题的背后，其实是对 <strong>网络编程模型、操作系统调度、以及应用场景</strong> 的综合理解。今天就把我的学习笔记分享出来，希望能帮到同样在准备面试的你。</p>
+<h2 id="1-Netty-线程模型概览"><a href="#1-Netty-线程模型概览" class="headerlink" title="1. Netty 线程模型概览"></a>1. Netty 线程模型概览</h2><p>Netty 是基于 <strong>Reactor 模式</strong> 实现的，典型的架构是 <strong>主从多线程模型</strong>：</p>
+<ul>
+<li><strong>BossGroup</strong>：负责接收客户端连接，通常只需要 1 个线程（也可以多个，但一般没必要）。</li>
+<li><strong>WorkerGroup</strong>：负责处理连接的读写事件，默认线程数为 <code>CPU核心数 × 2</code>。</li>
+</ul>
+<p>每个线程对应一个 <strong>EventLoop</strong>，每个 EventLoop 内部维护一个 <strong>Selector</strong> 和 <strong>任务队列</strong>，负责处理多个 Channel 的 IO 事件和异步任务。</p>
+<h2 id="2-workerGroup-默认线程数为什么是-CPU×2？"><a href="#2-workerGroup-默认线程数为什么是-CPU×2？" class="headerlink" title="2. workerGroup 默认线程数为什么是 CPU×2？"></a>2. workerGroup 默认线程数为什么是 CPU×2？</h2><p>打开 Netty 源码，在 <code>MultithreadEventLoopGroup</code> 的构造器中，如果没有指定线程数，默认值是这样计算的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">DEFAULT_EVENT_LOOP_THREADS = Math.max(<span class="number">1</span>, SystemPropertyUtil.getInt(</span><br><span class="line">    <span class="string">&quot;io.netty.eventLoopThreads&quot;</span>, Runtime.getRuntime().availableProcessors() * <span class="number">2</span>));</span><br></pre></td></tr></table></figure>
+
+<p>为什么是 <code>CPU × 2</code>？这其实是一个”经验值”，背后涉及两个核心因素：</p>
+<h3 id="2-1-非阻塞-IO-下的线程利用率"><a href="#2-1-非阻塞-IO-下的线程利用率" class="headerlink" title="2.1 非阻塞 IO 下的线程利用率"></a>2.1 非阻塞 IO 下的线程利用率</h3><p>Netty 的 IO 线程（EventLoop）主要负责两件事：</p>
+<ul>
+<li>轮询 Selector，获取就绪的 IO 事件；</li>
+<li>执行 Channel 上的任务（如业务处理、编解码等）。</li>
+</ul>
+<p>当线程执行 IO 操作（如 read&#x2F;write）时，如果是 <strong>非阻塞 IO</strong>，数据立刻返回，线程不会被挂起。线程大部分时间都在做 <strong>计算</strong> 或 <strong>等待事件</strong>。<br>在纯计算场景，线程数一般建议等于 CPU 核心数（避免过多上下文切换）。但 Netty 的 EventLoop 还会处理一些<strong>定时任务</strong>、<strong>用户自定义任务</strong>，这些任务可能会产生阻塞（比如写数据库、调用外部服务）。虽然我们通常建议将耗时任务放到业务线程池，但总有不可避免的轻量级阻塞。因此，<strong>稍多于 CPU 核心数的线程数</strong>，可以让 CPU 在少数线程轻微阻塞时仍有其他线程可运行，提高 CPU 利用率。<code>CPU × 2</code> 是一个经过实践检验的保守起始值。</p>
+<h3 id="2-2-IO-密集型与计算密集型的平衡"><a href="#2-2-IO-密集型与计算密集型的平衡" class="headerlink" title="2.2 IO 密集型与计算密集型的平衡"></a>2.2 IO 密集型与计算密集型的平衡</h3><p>严格来说，Netty 的 worker 线程既不是纯 IO 密集型（因为非阻塞 IO 不占线程等待时间），也不是纯计算密集型。它介于两者之间。<br>根据《Java 并发编程实战》的线程池配置公式：</p>
+<ul>
+<li><strong>计算密集型</strong>：线程数 &#x3D; CPU 核心数</li>
+<li><strong>IO 密集型</strong>：线程数 &#x3D; CPU 核心数 × (1 + 等待时间&#x2F;计算时间)</li>
+</ul>
+<p>Netty 的 EventLoop 在理想情况下，大部分时间在轮询（其实也是阻塞在 select 上，但那是系统调用，不占用 CPU 算力），因此一个 EventLoop 可以支撑成千上万连接。但因为还要处理少量任务，为了充分利用多核，设置 <code>CPU × 2</code> 既能避免过多线程竞争，又能榨干 CPU 性能。</p>
+<p><strong>注意</strong>：这只是默认值，实际生产中需要根据业务场景调整。如果业务逻辑全异步且无阻塞，甚至可以设为 <code>CPU + 1</code>；如果业务中混有少量阻塞操作，可以适当增加。</p>
+<h2 id="3-EventLoop-为什么必须单线程？"><a href="#3-EventLoop-为什么必须单线程？" class="headerlink" title="3. EventLoop 为什么必须单线程？"></a>3. EventLoop 为什么必须单线程？</h2><p>这个问题其实是在问：<strong>为什么 Netty 要把一个 EventLoop 绑定到一个固定的线程，并且 Channel 的所有操作都串行在这个线程上？</strong></p>
+<p>核心原因有三点：</p>
+<h3 id="3-1-无锁化串行设计"><a href="#3-1-无锁化串行设计" class="headerlink" title="3.1 无锁化串行设计"></a>3.1 无锁化串行设计</h3><p>Netty 保证：<strong>一个 Channel 的所有 IO 事件和异步任务，都是由同一个 EventLoop 线程执行的</strong>。这意味着在一个 Channel 的生命周期内，对 Channel 的操作（如 write、flush）都是单线程执行，<strong>天然避免了多线程竞争</strong>，不需要加锁。</p>
+<p>如果 EventLoop 是多线程的，那么多个线程同时处理同一个 Channel 的读写，就必须引入锁或同步机制，这会降低性能，增加复杂度。Netty 将”多连接”并发问题转化为”单连接串行”模型，极大简化了设计。</p>
+<h3 id="3-2-线程局部性-缓存友好"><a href="#3-2-线程局部性-缓存友好" class="headerlink" title="3.2 线程局部性 &amp; 缓存友好"></a>3.2 线程局部性 &amp; 缓存友好</h3><p>同一个线程反复处理相同的 Channel，可以充分利用 CPU 缓存。如果多个线程轮换处理同一个 Channel，会导致缓存频繁失效。</p>
+<h3 id="3-3-降低编程复杂度"><a href="#3-3-降低编程复杂度" class="headerlink" title="3.3 降低编程复杂度"></a>3.3 降低编程复杂度</h3><p>对于上层用户（业务开发者），只要保证业务逻辑不会长时间阻塞 EventLoop 线程，就无需关心并发安全问题。Netty 的 Pipeline 中的 Handler 默认都是线程安全的（因为串行调用），用户只需要关注业务本身。</p>
+<blockquote>
+<p>当然，单线程也意味着：<strong>绝对不能在这个线程里执行耗时操作</strong>（如数据库查询、RPC 调用），否则会阻塞其他 Channel 的处理。这就是为什么 Netty 推荐将耗时任务丢到业务线程池。</p>
+</blockquote>
+<h2 id="4-Tomcat-为什么线程多？"><a href="#4-Tomcat-为什么线程多？" class="headerlink" title="4. Tomcat 为什么线程多？"></a>4. Tomcat 为什么线程多？</h2><p>对比 Tomcat（传统 BIO 或 NIO 模式下），我们常常需要配置几百甚至上千的线程池。这是为什么？</p>
+<h3 id="4-1-传统的-BIO-连接模型"><a href="#4-1-传统的-BIO-连接模型" class="headerlink" title="4.1 传统的 BIO 连接模型"></a>4.1 传统的 BIO 连接模型</h3><p>早期的 Tomcat 使用 BIO（Blocking IO），每个连接分配一个线程，线程在读写完成前一直阻塞。因此并发数 &#x3D; 线程数，为了支持更多并发，必须配置大量线程。</p>
+<h3 id="4-2-即使使用-NIO，Tomcat-也是”半同步”模型"><a href="#4-2-即使使用-NIO，Tomcat-也是”半同步”模型" class="headerlink" title="4.2 即使使用 NIO，Tomcat 也是”半同步”模型"></a>4.2 即使使用 NIO，Tomcat 也是”半同步”模型</h3><p>Tomcat 的 NIO 实现虽然也使用 Selector 来检测 IO 事件，但它通常采用 <strong>“一个 Acceptor 接收连接 + 多个 Poller 轮询事件 + 多个 Worker 处理请求”</strong> 的模式。当 Poller 检测到读就绪后，会把请求交给 Worker 线程池去执行业务（如 Servlet 处理）。Worker 线程在执行业务时，可能会发生阻塞（比如等待 JDBC 结果），所以 Worker 线程数需要足够多，以避免请求排队。</p>
+<p>简单说：Tomcat 的 Worker 线程主要处理 <strong>业务逻辑</strong>，而业务逻辑往往是阻塞的，所以需要大量线程来支撑并发。</p>
+<h2 id="5-Netty-为什么线程少？"><a href="#5-Netty-为什么线程少？" class="headerlink" title="5. Netty 为什么线程少？"></a>5. Netty 为什么线程少？</h2><p>Netty 的核心思想是 <strong>IO 处理与业务处理分离</strong>：</p>
+<ul>
+<li><strong>IO 线程（EventLoop）</strong>：只做非阻塞 IO 和轻量级任务，数量少（默认 CPU×2）。</li>
+<li><strong>业务线程（自定义线程池）</strong>：处理耗时的业务逻辑，数量可根据业务特性调整。</li>
+</ul>
+<p>EventLoop 利用 Selector 同时管理成千上万连接，单线程就能支撑海量并发连接。只要业务不阻塞 EventLoop，少量线程就能撑起高吞吐。</p>
+<p>举个直观的例子：</p>
+<ul>
+<li>Tomcat 处理 10000 并发请求，可能需要 1000 个线程（假设每个请求业务耗时 100ms，线程数约等于 QPS × 响应时间）。</li>
+<li>Netty 处理 10000 个 WebSocket 连接，可能只需要 8 个 EventLoop 线程（8 核机器），所有连接的读写事件都在这些线程上快速轮询处理，业务逻辑异步丢给业务线程池。</li>
+</ul>
+<h2 id="6-两者对比总结"><a href="#6-两者对比总结" class="headerlink" title="6. 两者对比总结"></a>6. 两者对比总结</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Netty</th>
+<th>Tomcat</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>IO 模型</strong></td>
+<td>非阻塞 IO (NIO)</td>
+<td>传统 BIO &#x2F; NIO（但 Worker 仍可能阻塞）</td>
+</tr>
+<tr>
+<td><strong>线程角色</strong></td>
+<td>IO 线程 (EventLoop) + 业务线程池</td>
+<td>Acceptor + Poller + Worker 线程池</td>
+</tr>
+<tr>
+<td><strong>默认线程数</strong></td>
+<td>CPU 核心数 × 2（WorkerGroup）</td>
+<td>200（Tomcat NIO 默认 maxThreads）</td>
+</tr>
+<tr>
+<td><strong>线程与连接关系</strong></td>
+<td>一个 EventLoop 可管理数千连接</td>
+<td>一个 Worker 线程通常处理一个请求（连接）</td>
+</tr>
+<tr>
+<td><strong>是否允许业务阻塞</strong></td>
+<td>绝对不允许阻塞 EventLoop</td>
+<td>Worker 线程允许阻塞（如数据库访问）</td>
+</tr>
+<tr>
+<td><strong>适用场景</strong></td>
+<td>长连接、高并发、低延迟（网关、IM、RPC）</td>
+<td>短连接、传统 Web 应用（阻塞式业务）</td>
+</tr>
+<tr>
+<td><strong>设计哲学</strong></td>
+<td>少量线程 + 事件驱动 + 异步</td>
+<td>多线程 + 阻塞式处理（简化编程）</td>
+</tr>
+</tbody></table>
+<h2 id="写在最后"><a href="#写在最后" class="headerlink" title="写在最后"></a>写在最后</h2><p>回到面试官的那串问题，其实他并不是想考我死记硬背的数字，而是想看我是否理解 <strong>不同线程模型背后的设计取舍</strong>。<br>Netty 选择少量线程，是因为它充分利用了非阻塞 IO 和事件驱动，把线程从”等待”中解放出来，让 CPU 始终忙于计算或轮询。<br>而 Tomcat 选择多线程，是因为它要兼容传统的阻塞式编程模型，让开发者更容易上手。</p>
+<p>作为技术人员，我们不需要争论哪种模型更好，而是要理解：<strong>没有银弹，只有适合场景的架构</strong>。</p>
+<p>希望这篇文章能帮你理清 Netty 线程模型的来龙去脉。如果你在面试中也被问到类似问题，不妨从”为什么”的角度去回答，相信会给面试官留下更深刻的印象。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://bellongyan.eu.org">Long Yan</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://bellongyan.eu.org/p/2026/netty-thread-model/">https://bellongyan.eu.org/p/2026/netty-thread-model/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://bellongyan.eu.org" target="_blank">龙火火的个人博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E9%9D%A2%E8%AF%95%E9%A2%98/">面试题</a><a class="post-meta__tags" href="/tags/Netty/">Netty</a><a class="post-meta__tags" href="/tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/">线程模型</a><a class="post-meta__tags" href="/tags/Reactor/">Reactor</a></div><div class="post_share"><div class="social-share" data-image="/img/favicon.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/p/2026/redis-sliding-window-rate-limiter/" title="（面试题）Redis实现 IP 维度滑动窗口限流实践"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">（面试题）Redis实现 IP 维度滑动窗口限流实践</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/p/2026/redis-sliding-window-rate-limiter/" title="（面试题）Redis实现 IP 维度滑动窗口限流实践"><div class="cover" style="background: var(--default-bg-color)"></div><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-05</div><div class="title">（面试题）Redis实现 IP 维度滑动窗口限流实践</div></div></a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/favicon.png" onerror="this.onerror=null;this.src='/image/404.png'" alt="avatar"/></div><div class="author-info__name">Long Yan</div><div class="author-info__description">Talk is cheap, show me the code.</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">6</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">13</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/bellongyan"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/bellongyan" target="_blank" title="github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:colorful.longyan@gmail.com" target="_blank" title="envelope"><i class="fas fa-envelope" style="color: #4285F4;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Netty-%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B%E6%A6%82%E8%A7%88"><span class="toc-number">1.</span> <span class="toc-text">1. Netty 线程模型概览</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-workerGroup-%E9%BB%98%E8%AE%A4%E7%BA%BF%E7%A8%8B%E6%95%B0%E4%B8%BA%E4%BB%80%E4%B9%88%E6%98%AF-CPU%C3%972%EF%BC%9F"><span class="toc-number">2.</span> <span class="toc-text">2. workerGroup 默认线程数为什么是 CPU×2？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E9%9D%9E%E9%98%BB%E5%A1%9E-IO-%E4%B8%8B%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%88%A9%E7%94%A8%E7%8E%87"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 非阻塞 IO 下的线程利用率</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-IO-%E5%AF%86%E9%9B%86%E5%9E%8B%E4%B8%8E%E8%AE%A1%E7%AE%97%E5%AF%86%E9%9B%86%E5%9E%8B%E7%9A%84%E5%B9%B3%E8%A1%A1"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 IO 密集型与计算密集型的平衡</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-EventLoop-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%85%E9%A1%BB%E5%8D%95%E7%BA%BF%E7%A8%8B%EF%BC%9F"><span class="toc-number">3.</span> <span class="toc-text">3. EventLoop 为什么必须单线程？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E6%97%A0%E9%94%81%E5%8C%96%E4%B8%B2%E8%A1%8C%E8%AE%BE%E8%AE%A1"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 无锁化串行设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E7%BA%BF%E7%A8%8B%E5%B1%80%E9%83%A8%E6%80%A7-%E7%BC%93%E5%AD%98%E5%8F%8B%E5%A5%BD"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 线程局部性 &amp; 缓存友好</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E9%99%8D%E4%BD%8E%E7%BC%96%E7%A8%8B%E5%A4%8D%E6%9D%82%E5%BA%A6"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 降低编程复杂度</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Tomcat-%E4%B8%BA%E4%BB%80%E4%B9%88%E7%BA%BF%E7%A8%8B%E5%A4%9A%EF%BC%9F"><span class="toc-number">4.</span> <span class="toc-text">4. Tomcat 为什么线程多？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E4%BC%A0%E7%BB%9F%E7%9A%84-BIO-%E8%BF%9E%E6%8E%A5%E6%A8%A1%E5%9E%8B"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 传统的 BIO 连接模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E5%8D%B3%E4%BD%BF%E4%BD%BF%E7%94%A8-NIO%EF%BC%8CTomcat-%E4%B9%9F%E6%98%AF%E2%80%9D%E5%8D%8A%E5%90%8C%E6%AD%A5%E2%80%9D%E6%A8%A1%E5%9E%8B"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 即使使用 NIO，Tomcat 也是”半同步”模型</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-Netty-%E4%B8%BA%E4%BB%80%E4%B9%88%E7%BA%BF%E7%A8%8B%E5%B0%91%EF%BC%9F"><span class="toc-number">5.</span> <span class="toc-text">5. Netty 为什么线程少？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E4%B8%A4%E8%80%85%E5%AF%B9%E6%AF%94%E6%80%BB%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">6. 两者对比总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%86%99%E5%9C%A8%E6%9C%80%E5%90%8E"><span class="toc-number">7.</span> <span class="toc-text">写在最后</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/p/2026/netty-thread-model/" title="（面试题）Netty 线程模型">（面试题）Netty 线程模型</a><time datetime="2026-03-11T06:57:00.000Z" title="发表于 2026-03-11 14:57:00">2026-03-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/p/2026/redis-sliding-window-rate-limiter/" title="（面试题）Redis实现 IP 维度滑动窗口限流实践">（面试题）Redis实现 IP 维度滑动窗口限流实践</a><time datetime="2026-03-05T05:54:00.000Z" title="发表于 2026-03-05 13:54:00">2026-03-05</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/p/2023/GanGeneratePics/" title="PaddlePaddle 飞桨实现GAN生成对抗网络生成MINIST手写数字图像">PaddlePaddle 飞桨实现GAN生成对抗网络生成MINIST手写数字图像</a><time datetime="2023-05-11T06:00:00.000Z" title="发表于 2023-05-11 14:00:00">2023-05-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/p/2023/DoNotPlayPhone/" title="别玩手机 图像分类比赛">别玩手机 图像分类比赛</a><time datetime="2023-05-09T16:00:00.000Z" title="发表于 2023-05-10 00:00:00">2023-05-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/p/2023/PaddleTransferLearningFixUserWarning/" title="解决PaddlePaddle飞桨在迁移学习使用预训练模型时更改num_classes参数出现警告">解决PaddlePaddle飞桨在迁移学习使用预训练模型时更改num_classes参数出现警告</a><time datetime="2023-05-09T16:00:00.000Z" title="发表于 2023-05-10 00:00:00">2023-05-10</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2026 By Long Yan</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text">This is my Blog</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"></div></div></body></html>

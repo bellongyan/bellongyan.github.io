@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://bellongyan.eu.org/p/2026/netty-thread-model/</loc>
+    <lastmod>2026-03-11</lastmod>
+  </url>
+  <url>
     <loc>https://bellongyan.eu.org/p/2026/redis-sliding-window-rate-limiter/</loc>
     <lastmod>2026-03-05</lastmod>
   </url>
